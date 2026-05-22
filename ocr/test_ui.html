@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCR Module — Test Console</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #2a2e3d;
+    --accent: #4ade80;
+    --accent2: #60a5fa;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-weight: 500;
+    color: #0d0f14;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  h1 { font-size: 18px; font-weight: 500; color: var(--text); }
+  h1 span { color: var(--muted); font-weight: 300; }
+
+  .ping-dot {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+    transition: background .3s;
+  }
+  .dot.online { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .dot.offline { background: var(--danger); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: .875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .card-header .method {
+    background: var(--accent);
+    color: #0d0f14;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .card-header .method.get { background: var(--accent2); }
+
+  .card-body { padding: 1.25rem; }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(74, 222, 128, .05);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+
+  .drop-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .drop-label { font-size: 13px; color: var(--muted); }
+  .drop-label strong { color: var(--text); }
+
+  .preview-img {
+    width: 100%; max-height: 200px; object-fit: contain;
+    border-radius: 6px; margin-top: 1rem;
+    border: 1px solid var(--border);
+    display: none;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    margin-top: 1rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  select, input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: .6rem .875rem;
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  select:focus, input[type=text]:focus { border-color: var(--accent); }
+
+  option { background: var(--surface2); }
+
+  .btn {
+    margin-top: 1.25rem;
+    width: 100%;
+    padding: .75rem;
+    background: var(--accent);
+    color: #0d0f14;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .03em;
+  }
+
+  .btn:hover { opacity: .9; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    margin-top: .75rem;
+  }
+
+  .result-panel {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    min-height: 120px;
+    max-height: 420px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--muted);
+  }
+
+  .result-panel.has-result { color: var(--text); }
+
+  .status-bar {
+    display: flex; gap: .75rem; flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .badge-green  { color: var(--accent);  border-color: var(--accent);  background: rgba(74,222,128,.08); }
+  .badge-blue   { color: var(--accent2); border-color: var(--accent2); background: rgba(96,165,250,.08); }
+  .badge-yellow { color: var(--warn);    border-color: var(--warn);    background: rgba(251,191,36,.08); }
+  .badge-red    { color: var(--danger);  border-color: var(--danger);  background: rgba(248,113,113,.08); }
+
+  .field-table {
+    width: 100%; border-collapse: collapse; margin-top: .5rem;
+  }
+
+  .field-table tr { border-bottom: 1px solid var(--border); }
+  .field-table tr:last-child { border-bottom: none; }
+  .field-table td {
+    padding: .5rem .25rem;
+    font-family: var(--mono);
+    font-size: 12px;
+    vertical-align: top;
+  }
+
+  .field-table td:first-child { color: var(--muted); width: 40%; padding-right: 1rem; }
+  .field-table td:last-child  { color: var(--text); font-weight: 500; }
+
+  .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #0d0f14;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tab-row { display: flex; gap: 2px; margin-bottom: 1rem; }
+  .tab {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: .15s;
+  }
+  .tab.active { background: var(--accent); color: #0d0f14; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">OCR</div>
+  <div>
+    <h1>OCR Module <span>/ Test Console</span></h1>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono)">iDigi Cloud Internship — Python Module</div>
+  </div>
+  <div class="ping-dot">
+    <div class="dot" id="ping-dot"></div>
+    <span id="ping-label">checking...</span>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- LEFT: Single Document -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="method">POST</span>
+        /ocr/single — One document
+      </div>
+      <div class="card-body">
+
+        <div class="drop-zone" id="drop-zone-single">
+          <input type="file" id="file-single" accept="image/*,.pdf" onchange="handleSingleFile(this)">
+          <div class="drop-icon">📄</div>
+          <div class="drop-label"><strong>Click or drag</strong> a document image here<br>Aadhaar · PAN · DL · Ration Card</div>
+        </div>
+        <img id="preview-single" class="preview-img" alt="preview">
+
+        <label>Document type hint (optional)</label>
+        <select id="doc-type-single">
+          <option value="">Auto-detect</option>
+          <option value="aadhaar">Aadhaar Card</option>
+          <option value="pan">PAN Card</option>
+          <option value="driving_licence">Driving Licence</option>
+          <option value="ration_card">Ration Card</option>
+        </select>
+
+        <button class="btn" id="btn-single" onclick="runSingle()">
+          <span class="spinner" id="spin-single"></span>
+          Run OCR
+        </button>
+        <button class="btn btn-secondary" onclick="downloadCSV()">Download as CSV</button>
+
+      </div>
+    </div>
+
+    <!-- Result panel single -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">Result</div>
+      <div class="card-body">
+        <div id="status-single" class="status-bar" style="display:none"></div>
+        <div id="result-view-single">
+          <div class="tab-row">
+            <button class="tab active" onclick="switchTab('single','fields',this)">Fields</button>
+            <button class="tab" onclick="switchTab('single','json',this)">Raw JSON</button>
+            <button class="tab" onclick="switchTab('single','kyc',this)">KYC Payload</button>
+          </div>
+          <div id="tab-single-fields" class="result-panel">Waiting for OCR result...</div>
+          <div id="tab-single-json"   class="result-panel" style="display:none">Waiting for OCR result...</div>
+          <div id="tab-single-kyc"    class="result-panel" style="display:none">Waiting for OCR result...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Batch -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="method">POST</span>
+        /ocr/batch — Multiple documents
+      </div>
+      <div class="card-body">
+
+        <div class="drop-zone" id="drop-zone-batch">
+          <input type="file" id="file-batch" accept="image/*,.pdf" multiple onchange="updateBatchLabel(this)">
+          <div class="drop-icon">📂</div>
+          <div class="drop-label" id="batch-label"><strong>Click or drag</strong> multiple files here</div>
+        </div>
+
+        <label>Document type hints (optional, comma-separated)</label>
+        <input type="text" id="doc-types-batch" placeholder="e.g. aadhaar,pan">
+
+        <button class="btn" id="btn-batch" onclick="runBatch()">
+          <span class="spinner" id="spin-batch"></span>
+          Run Batch OCR
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Result panel batch -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">Batch Result — Merged KYC Payload</div>
+      <div class="card-body">
+        <div id="status-batch" class="status-bar" style="display:none"></div>
+        <div class="tab-row">
+          <button class="tab active" onclick="switchTab('batch','kyc',this)">KYC Payload</button>
+          <button class="tab" onclick="switchTab('batch','json',this)">Full JSON</button>
+        </div>
+        <div id="tab-batch-kyc"  class="result-panel">Waiting for batch result...</div>
+        <div id="tab-batch-json" class="result-panel" style="display:none">Waiting for batch result...</div>
+      </div>
+    </div>
+
+    <!-- API Quick Reference -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <span class="method get">GET</span>
+        Quick reference — For your teammates
+      </div>
+      <div class="card-body">
+        <div style="font-family:var(--mono);font-size:12px;line-height:2;color:var(--muted)">
+          <div><span style="color:var(--accent)">POST</span> /ocr/single &nbsp;&nbsp; ← Frontend calls this</div>
+          <div><span style="color:var(--accent)">POST</span> /ocr/batch &nbsp;&nbsp;&nbsp; ← Java calls this</div>
+          <div><span style="color:var(--accent2)">GET &nbsp;</span> /ping &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ← Health check</div>
+          <div style="margin-top:.75rem;color:var(--border)">──────────────────────</div>
+          <div style="margin-top:.75rem">Response key: <span style="color:var(--text)">kyc_payload</span></div>
+          <div>Pass this directly to <span style="color:var(--warn)">KYC module (Step 5)</span></div>
+          <div style="margin-top:.5rem">Confidence levels:</div>
+          <div><span style="color:var(--accent)">high</span> · <span style="color:var(--warn)">medium</span> · <span style="color:var(--danger)">low</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BASE = "http://localhost:5000";
+let singleResult = null;
+
+// ── Ping ──────────────────────────────────────────────
+async function ping() {
+  try {
+    const r = await fetch(`${BASE}/ping`);
+    const ok = r.ok;
+    document.getElementById('ping-dot').className = 'dot ' + (ok ? 'online' : 'offline');
+    document.getElementById('ping-label').textContent = ok ? 'server online' : 'server offline';
+  } catch {
+    document.getElementById('ping-dot').className = 'dot offline';
+    document.getElementById('ping-label').textContent = 'server offline';
+  }
+}
+ping(); setInterval(ping, 5000);
+
+// ── Preview ───────────────────────────────────────────
+function handleSingleFile(input) {
+  const img = document.getElementById('preview-single');
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    img.style.display = 'none';
+    document.querySelector('#drop-zone-single .drop-label').innerHTML =
+      '<strong>📄 PDF selected:</strong> ' + file.name;
+  } else {
+    const url = URL.createObjectURL(file);
+    img.src = url; img.style.display = 'block';
+    document.querySelector('#drop-zone-single .drop-label').innerHTML =
+      '<strong>Image selected:</strong> ' + file.name;
+  }
+}
+
+function updateBatchLabel(input) {
+  const n = input.files.length;
+  document.getElementById('batch-label').innerHTML =
+    `<strong>${n} file${n>1?'s':''} selected</strong>`;
+}
+
+// ── Tab switching ─────────────────────────────────────
+function switchTab(group, tab, btn) {
+  document.querySelectorAll(`[id^="tab-${group}-"]`).forEach(el => el.style.display = 'none');
+  document.getElementById(`tab-${group}-${tab}`).style.display = 'block';
+  btn.closest('.tab-row').querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Confidence badge ─────────────────────────────────
+function confBadge(c) {
+  const map = { high: 'badge-green', medium: 'badge-yellow', low: 'badge-red' };
+  return `<span class="badge ${map[c]||'badge-red'}">${c} confidence</span>`;
+}
+
+// ── Render fields as table ────────────────────────────
+function renderFields(fields, missing) {
+  if (!fields || Object.keys(fields).length === 0)
+    return '<span style="color:var(--muted)">No fields extracted. Check image quality.</span>';
+
+  let html = '<table class="field-table">';
+  for (const [k, v] of Object.entries(fields)) {
+    html += `<tr><td>${k}</td><td>${v}</td></tr>`;
+  }
+  if (missing && missing.length > 0) {
+    missing.forEach(m => {
+      html += `<tr><td>${m}</td><td style="color:var(--danger)">— not found</td></tr>`;
+    });
+  }
+  html += '</table>';
+  return html;
+}
+
+// ── Single OCR ────────────────────────────────────────
+async function runSingle() {
+  const file = document.getElementById('file-single').files[0];
+  if (!file) { alert('Please select a document image first.'); return; }
+
+  const btn = document.getElementById('btn-single');
+  const spin = document.getElementById('spin-single');
+  btn.disabled = true; spin.style.display = 'inline-block';
+
+  const form = new FormData();
+  form.append('file', file);
+  const docType = document.getElementById('doc-type-single').value;
+  if (docType) form.append('doc_type', docType);
+
+  try {
+    const res = await fetch(`${BASE}/ocr/single`, { method: 'POST', body: form });
+    const data = await res.json();
+    singleResult = data;
+
+    // Status badges
+    const statusEl = document.getElementById('status-single');
+    statusEl.style.display = 'flex';
+    statusEl.innerHTML = `
+      <span class="badge badge-blue">${data.document_type}</span>
+      ${confBadge(data.confidence)}
+      ${data.missing_fields?.length ? `<span class="badge badge-yellow">${data.missing_fields.length} missing fields</span>` : ''}
+    `;
+
+    // Fields tab
+    const fEl = document.getElementById('tab-single-fields');
+    fEl.classList.add('has-result');
+    fEl.innerHTML = renderFields(data.fields, data.missing_fields);
+
+    // JSON tab
+    document.getElementById('tab-single-json').classList.add('has-result');
+    document.getElementById('tab-single-json').textContent = JSON.stringify(data, null, 2);
+
+    // KYC Payload tab
+    const kEl = document.getElementById('tab-single-kyc');
+    kEl.classList.add('has-result');
+    kEl.textContent = JSON.stringify(data.kyc_payload, null, 2);
+
+  } catch (e) {
+    document.getElementById('tab-single-fields').textContent = `Error: ${e.message}\n\nIs the Flask server running?\nRun: python app.py`;
+  }
+
+  btn.disabled = false; spin.style.display = 'none';
+}
+
+// ── CSV Download ──────────────────────────────────────
+async function downloadCSV() {
+  const file = document.getElementById('file-single').files[0];
+  if (!file) { alert('Please run OCR first.'); return; }
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('format', 'csv');
+  const docType = document.getElementById('doc-type-single').value;
+  if (docType) form.append('doc_type', docType);
+
+  const res = await fetch(`${BASE}/ocr/single`, { method: 'POST', body: form });
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'ocr_result.csv'; a.click();
+}
+
+// ── Batch OCR ─────────────────────────────────────────
+async function runBatch() {
+  const files = document.getElementById('file-batch').files;
+  if (!files.length) { alert('Please select at least one file.'); return; }
+
+  const btn = document.getElementById('btn-batch');
+  const spin = document.getElementById('spin-batch');
+  btn.disabled = true; spin.style.display = 'inline-block';
+
+  const form = new FormData();
+  for (const f of files) form.append('files[]', f);
+  const docTypes = document.getElementById('doc-types-batch').value;
+  if (docTypes) form.append('doc_types', docTypes);
+
+  try {
+    const res = await fetch(`${BASE}/ocr/batch`, { method: 'POST', body: form });
+    const data = await res.json();
+
+    // Status
+    const statusEl = document.getElementById('status-batch');
+    statusEl.style.display = 'flex';
+    statusEl.innerHTML = `<span class="badge badge-blue">${data.total_documents} docs processed</span>
+      <span class="badge badge-${data.kyc_payload?.name_consistent ? 'green':'red'}">
+        name ${data.kyc_payload?.name_consistent ? 'consistent ✓' : 'mismatch ⚠'}
+      </span>`;
+
+    // KYC payload tab
+    const kEl = document.getElementById('tab-batch-kyc');
+    kEl.classList.add('has-result');
+    kEl.innerHTML = renderFields(data.kyc_payload);
+
+    // Full JSON tab
+    const jEl = document.getElementById('tab-batch-json');
+    jEl.classList.add('has-result');
+    jEl.textContent = JSON.stringify(data, null, 2);
+
+  } catch(e) {
+    document.getElementById('tab-batch-kyc').textContent = `Error: ${e.message}\n\nIs the Flask server running?\nRun: python app.py`;
+  }
+
+  btn.disabled = false; spin.style.display = 'none';
+}
+
+// Drag and drop styling
+['drop-zone-single','drop-zone-batch'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', () => el.classList.remove('dragover'));
+});
+</script>
+</body>
+</html>
