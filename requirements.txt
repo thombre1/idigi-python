@@ -15,7 +15,7 @@ joblib==1.5.3
 MarkupSafe==3.0.3
 numpy
 packaging==26.2
-pandas==3.0.3
+pandas
 pdf2image==1.17.0
 pillow==11.0.0
 pydantic==2.13.4
