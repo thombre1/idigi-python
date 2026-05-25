@@ -22,7 +22,7 @@ import os
 
 from ocr_service import extract_document, to_json, to_csv, build_kyc_payload, pdf_to_images
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 CORS(app)   # Allow the Frontend (React) to call this server from a different port
 
 
