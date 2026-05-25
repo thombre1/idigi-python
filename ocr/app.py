@@ -20,6 +20,23 @@ from PIL import Image
 import io
 import os
 
+import pytesseract
+import shutil
+
+
+
+# This helps find where tesseract was installed in the Render environment
+tesseract_path = shutil.which("tesseract")
+
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+else:
+    # Fallback/Default path if you installed it to a custom local bin
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
+
+
+
 from ocr_service import extract_document, to_json, to_csv, build_kyc_payload, pdf_to_images
 
 app = Flask(__name__, template_folder='.')
