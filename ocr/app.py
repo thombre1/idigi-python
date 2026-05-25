@@ -14,7 +14,7 @@ Run with:
 """
 
 import json
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, render_template,send_file
 from flask_cors import CORS
 from PIL import Image
 import io
@@ -193,6 +193,11 @@ def ocr_batch():
 # ──────────────────────────────────────────────
 # RUN
 # ──────────────────────────────────────────────
+@app.route('/')
+def home():
+    # Looks for index.html in the 'templates' folder
+    return render_template('test_ui.html')
+
 
 if __name__ == "__main__":
     print("=" * 50)
