@@ -1,5 +1,6 @@
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -237,13 +238,37 @@ def verify(data: KycRequest):
 
     kit_path = _make_welcome_kit(data, age, ratio, prob, status, remarks)
 
-    return KycResponse(
-        accountOpeningId=aid,
-        verified=True,
-        amlClean=(status != "REJECTED"),
-        riskScore=prob,
-        status=status,
-        remarks=remarks,
-        welcomeKitPath=kit_path,
-        derived=DerivedInfo(age=age, depositIncomeRatio=ratio),
+    response_data = {
+    "accountOpeningId": aid,
+    "verified": True,
+    "amlClean": (status != "REJECTED"),
+    "riskScore": prob,
+    "status": status,
+    "remarks": remarks,
+    "derived": {
+        "age": age,
+        "depositIncomeRatio": ratio
+        }
+    }
+
+# Return PDF file directly if approved
+    if status == "APPROVED" and kit_path and os.path.exists(kit_path):
+        return FileResponse(
+            path=kit_path,
+            media_type="application/pdf",
+            filename=os.path.basename(kit_path),
+            headers={
+                "X-KYC-Response": str(response_data)
+            }
+        )
+
+    return response_data
+
+@app.get("/kyc/download/{account_id}")
+def download_welcome_kit(account_id: str):
+    filepath = ...
+    return FileResponse(
+        filepath,
+        media_type="application/pdf",
+        filename=os.path.basename(filepath)
     )
